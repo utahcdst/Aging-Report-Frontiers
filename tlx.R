@@ -161,57 +161,6 @@ ggplot(data, aes(Mode, TLX)) +
   labs(title="", x="", y="TLX") +
   ggsave("Charts/tlx_mode.jpg", height = 4, width = 4.5, dpi = 300)
 
-#----Vehicle--------------------------------------------------------------------------------------------------------------------
-# Cohort / Vehicle
-Subject          <- lmer(TLX ~                    (1|Sub), data = data, REML = FALSE)
-cohort           <- lmer(TLX ~           Cohort + (1|Sub), data = data, REML = FALSE)
-vehicle          <- lmer(TLX ~ Vehicle          + (1|Sub), data = data, REML = FALSE)
-vehicle_cohort   <- lmer(TLX ~ Vehicle + Cohort + (1|Sub), data = data, REML = FALSE)
-vehicle_x_cohort <- lmer(TLX ~ Vehicle * Cohort + (1|Sub), data = data, REML = FALSE)
-
-anova(vehicle         , Subject)
-anova(vehicle_cohort  , cohort)
-anova(vehicle_x_cohort, vehicle_cohort) 
-
-# Pairwise - Audi Reference
-summary(vehicle_x_cohort)
-
-# Pairwise - Cadillac Reference 
-data <- data %>% ungroup(Vehicle) %>%  mutate(Vehicle = fct_relevel(Vehicle, "Cadillac CT6"))
-vehicle_x_cohort <- lmer(TLX ~ Vehicle * Cohort + (1|Sub), data = data, REML = FALSE)
-summary(vehicle_x_cohort)
-
-# Pairwise - Lincoln Reference
-data <- data %>% ungroup(Vehicle) %>%  mutate(Vehicle = fct_relevel(Vehicle, "Lincoln Navigator"))
-vehicle_x_cohort <- lmer(TLX ~ Vehicle * Cohort + (1|Sub), data = data, REML = FALSE)
-summary(vehicle_x_cohort)
-
-# Pairwise - Mazda Reference
-data <- data %>% ungroup(Vehicle) %>%  mutate(Vehicle = fct_relevel(Vehicle, "Mazda CX5"))
-vehicle_x_cohort <- lmer(TLX ~ Vehicle * Cohort + (1|Sub), data = data, REML = FALSE)
-summary(vehicle_x_cohort)
-
-# Pairwise - Nissan Reference
-data <- data %>% ungroup(Vehicle) %>%  mutate(Vehicle = fct_relevel(Vehicle, "Nissan Pathfinder"))
-vehicle_x_cohort <- lmer(TLX ~ Vehicle * Cohort + (1|Sub), data = data, REML = FALSE)
-summary(vehicle_x_cohort)
-
-# Pairwise - Volvo Reference
-data <- data %>% ungroup(Vehicle) %>%  mutate(Vehicle = fct_relevel(Vehicle, "Volvo XC90"))
-vehicle_x_cohort <- lmer(TLX ~ Vehicle * Cohort + (1|Sub), data = data, REML = FALSE)
-summary(vehicle_x_cohort)
-
-#Plot
-data <- data %>% ungroup(Vehicle) %>%  mutate(Vehicle = fct_relevel(Vehicle, c("Audi A6", "Cadillac CT6", "Lincoln Navigator", "Mazda CX5", "Nissan Pathfinder", "Volvo XC90")))
-
-ggplot(data, aes(Vehicle, TLX)) +
-  geom_boxplot(aes(fill=Cohort)) +
-  theme_bw() +
-  ylim(0,21) + 
-  theme(axis.text.x = element_text(angle=90, hjust = 1)) +
-  scale_fill_manual(values = c("white", "grey")) +
-  labs(title="", x="", y="TLX") +
-  ggsave("Charts/tlx_vehicle.jpg", height = 4, width = 4, dpi = 300)
 
 #----Means--------------------------------------------------------------------------------------------------------------------
 # Means and SD
@@ -234,26 +183,22 @@ data %>% group_by(Vehicle, Cohort) %>% summarise(m = mean(TLX), sd = sd(TLX))
 
 #----Full Factorial--------------------------------------------------------------------------------------------------------------------
 # Analyses
-ctm_x <- lmer(TLX ~ Cohort + Task + Mode + Cohort:Task + Task:Mode + Mode:Cohort + (1|Sub), data = data, REML = FALSE)
-ctm   <- lmer(TLX ~ Cohort * Task * Mode + (1|Sub), data = data, REML = FALSE)
-anova(ctm, ctm_x)
-
-ctv_x <- lmer(TLX ~ Cohort + Task + Vehicle + Cohort:Task + Task:Vehicle + Cohort:Vehicle + (1|Sub), data = data, REML = FALSE)
-ctv   <- lmer(TLX ~ Cohort * Task * Vehicle + (1|Sub), data = data, REML = FALSE)
-anova(ctv, ctv_x)
-
-cmv_x <- lmer(TLX ~ Cohort + Mode + Vehicle + Cohort:Mode + Mode:Vehicle + Cohort:Vehicle + (1|Sub), data = data, REML = FALSE)
-cmv   <- lmer(TLX ~ Cohort * Mode * Vehicle + (1|Sub), data = data, REML = FALSE)
-anova(cmv, cmv_x)
-
-vtm_x <- lmer(TLX ~ Vehicle + Task + Mode + Vehicle:Task + Task:Mode + Mode:Vehicle + (1|Sub), data = data, REML = FALSE)
-vtm   <- lmer(TLX ~ Vehicle * Task * Mode + (1|Sub), data = data, REML = FALSE)
-anova(vtm, vtm_x)
 
 
-ctmv_x <- lmer(TLX ~ Cohort + Task + Mode + Vehicle
-               + Cohort:Task + Task:Mode + Mode:Vehicle + Cohort:Mode + Cohort:Vehicle + Vehicle:Task
+ctmv_x <- lmer(TLX ~ Cohort + Task + Mode 
+               + Cohort:Task + Task:Mode + Cohort:Mode
                + (1|Sub), data = data, REML = FALSE)
-ctmv   <- lmer(TLX ~ Cohort * Task * Mode * Vehicle + (1|Sub), data = data, REML = FALSE)
+ctmv   <- lmer(TLX ~ Cohort * Task * Mode + (1|Sub), data = data, REML = FALSE)
 anova(ctmv, ctmv_x)  
 
+data2 <- data %>%
+  filter(Task != "nBack", Task != "SuRT", Task != "Single")
+
+ggplot(data2, aes(Task, TLX)) +
+  geom_boxplot(aes(fill=Cohort), alpha=.8) +
+  theme_bw() + 
+  #ylim(10, 2050) + 
+  facet_grid(~Mode)+
+  theme(axis.text.x = element_text(angle=90, hjust = 1)) +
+  scale_fill_manual(values = c("white", "grey"))  +
+  ggsave("Charts/tlx.jpg", height = 4, width = 6, dpi = 300)
