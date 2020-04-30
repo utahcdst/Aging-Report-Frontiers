@@ -148,57 +148,6 @@ ggplot(data, aes(Mode, Seconds)) +
   labs(title="", x="", y="Seconds") +
   ggsave("Charts/tot_mode.jpg", height = 4, width = 3, dpi = 300)
 
-#----Vehicle--------------------------------------------------------------------------------------------------------------------
-# Cohort / Vehicle
-subject          <- lmer(Seconds ~                    (1|sub), data = data, REML = FALSE)
-cohort           <- lmer(Seconds ~           Cohort + (1|sub), data = data, REML = FALSE)
-vehicle          <- lmer(Seconds ~ Vehicle          + (1|sub), data = data, REML = FALSE)
-vehicle_cohort   <- lmer(Seconds ~ Vehicle + Cohort + (1|sub), data = data, REML = FALSE)
-vehicle_x_cohort <- lmer(Seconds ~ Vehicle * Cohort + (1|sub), data = data, REML = FALSE)
-
-anova(vehicle         , subject)
-anova(vehicle_cohort  , cohort)
-anova(vehicle_x_cohort, vehicle_cohort) 
-
-    # Pairwise - Audi Reference
-    summary(vehicle_x_cohort)
-    
-    # Pairwise - Cadillac Reference 
-    data <- data %>% ungroup(Vehicle) %>%  mutate(Vehicle = fct_relevel(Vehicle, "Cadillac CT6"))
-    vehicle_x_cohort <- lmer(Seconds ~ Vehicle * Cohort + (1|sub), data = data, REML = FALSE)
-    summary(vehicle_x_cohort)
-    
-    # Pairwise - Lincoln Reference
-    data <- data %>% ungroup(Vehicle) %>%  mutate(Vehicle = fct_relevel(Vehicle, "Lincoln Navigator"))
-    vehicle_x_cohort <- lmer(Seconds ~ Vehicle * Cohort + (1|sub), data = data, REML = FALSE)
-    summary(vehicle_x_cohort)
-    
-    # Pairwise - Mazda Reference
-    data <- data %>% ungroup(Vehicle) %>%  mutate(Vehicle = fct_relevel(Vehicle, "Mazda CX5"))
-    vehicle_x_cohort <- lmer(Seconds ~ Vehicle * Cohort + (1|sub), data = data, REML = FALSE)
-    summary(vehicle_x_cohort)
-    
-    # Pairwise - Nissan Reference
-    data <- data %>% ungroup(Vehicle) %>%  mutate(Vehicle = fct_relevel(Vehicle, "Nissan Pathfinder"))
-    vehicle_x_cohort <- lmer(Seconds ~ Vehicle * Cohort + (1|sub), data = data, REML = FALSE)
-    summary(vehicle_x_cohort)
-    
-    # Pairwise - Volvo Reference
-    data <- data %>% ungroup(Vehicle) %>%  mutate(Vehicle = fct_relevel(Vehicle, "Volvo XC90"))
-    vehicle_x_cohort <- lmer(Seconds ~ Vehicle * Cohort + (1|sub), data = data, REML = FALSE)
-    summary(vehicle_x_cohort)
-    
-#Plot
-ggplot(data, aes(Vehicle, Seconds)) +
-  geom_boxplot(aes(fill=Cohort)) +
-  geom_hline(yintercept = 24, linetype="dashed", color="red") + 
-  theme_bw() +
-  ylim(0,75) + 
-  theme(axis.text.x = element_text(angle=90, hjust = 1)) +
-  scale_fill_manual(values = c("white", "grey")) +
-  labs(title="", x="") +
-  ggsave("Charts/tot_vehicle.jpg", height = 4, width = 4, dpi = 300)
-
 #----Means--------------------------------------------------------------------------------------------------------------------
 # Means and SD
 
@@ -208,17 +157,12 @@ ggplot(data, aes(Vehicle, Seconds)) +
     data %>% group_by(Task)       %>% summarise(m = mean(Seconds), sd = sd(Seconds))
     # Mode
     data %>% group_by(Mode)       %>% summarise(m = mean(Seconds), sd = sd(Seconds))
-    # Vehicle
-    data %>% group_by(Vehicle)    %>% summarise(m = mean(Seconds), sd = sd(Seconds))
-    
     # Task x Cohort
     data %>% group_by(Task,    Cohort) %>% summarise(m = mean(Seconds), sd = sd(Seconds))
     # Mode x Cohort
     data %>% group_by(Mode,    Cohort) %>% summarise(m = mean(Seconds), sd = sd(Seconds))
-    # Vehicle x Cohort
-    data %>% group_by(Vehicle, Cohort) %>% summarise(m = mean(Seconds), sd = sd(Seconds))
   
-#----Full Factorial--------------------------------------------------------------------------------------------------------------------
+#----3 way interactions--------------------------------------------------------------------------------------------------------------------
 # Means and SD
 data <- data %>%
   filter(Task != "SuRT", Task != "nBack", Task != "Single") %>%
@@ -228,28 +172,11 @@ data <- data %>%
 
     # Analyses
     
-   
-    ctm_x <- lmer(Seconds ~ Cohort + Task + Mode + Cohort:Task + Task:Mode + Mode:Cohort + (1|sub), data = data, REML = FALSE)
-    ctm   <- lmer(Seconds ~ Cohort * Task * Mode + (1|sub), data = data, REML = FALSE)
-    anova(ctm, ctm_x)
     
-    ctv_x <- lmer(Seconds ~ Cohort + Task + Vehicle + Cohort:Task + Task:Vehicle + Cohort:Vehicle + (1|sub), data = data, REML = FALSE)
-    ctv   <- lmer(Seconds ~ Cohort * Task * Vehicle + (1|sub), data = data, REML = FALSE)
-    anova(ctv, ctv_x)
-    
-    cmv_x <- lmer(Seconds ~ Cohort + Mode + Vehicle + Cohort:Mode + Mode:Vehicle + Cohort:Vehicle + (1|sub), data = data, REML = FALSE)
-    cmv   <- lmer(Seconds ~ Cohort * Mode * Vehicle + (1|sub), data = data, REML = FALSE)
-    anova(cmv, cmv_x)
-    
-    vtm_x <- lmer(Seconds ~ Vehicle + Task + Mode + Vehicle:Task + Task:Mode + Mode:Vehicle + (1|sub), data = data, REML = FALSE)
-    vtm   <- lmer(Seconds ~ Vehicle * Task * Mode + (1|sub), data = data, REML = FALSE)
-    anova(vtm, vtm_x)
-    
-    
-    ctmv_x <- lmer(Seconds ~ Cohort + Task + Mode + Vehicle
-                   + Cohort:Task + Task:Mode + Mode:Vehicle + Cohort:Mode + Cohort:Vehicle + Vehicle:Task
+    ctmv_x <- lmer(Seconds ~ Cohort + Task + Mode
+                   + Cohort:Task + Task:Mode + Cohort:Mode
                    + (1|sub), data = data, REML = FALSE)
-    ctmv   <- lmer(Seconds ~ Cohort * Task * Mode * Vehicle + (1|sub), data = data, REML = FALSE)
+    ctmv   <- lmer(Seconds ~ Cohort * Task * Mode + (1|sub), data = data, REML = FALSE)
     anova(ctmv, ctmv_x)  
     
     
@@ -259,9 +186,9 @@ ggplot(data, aes(Task, Seconds)) +
   geom_boxplot(aes(fill=Cohort), alpha=.8) +
   theme_bw() + 
   ylim(10,50) + 
-  facet_grid(Vehicle~Mode)+
+  facet_grid(~Mode)+
   theme(axis.text.x = element_text(angle=90, hjust = 1)) +
   scale_fill_manual(values = c("white", "grey")) +
-  ggsave("Charts/tct_vehicle.jpg", height = 8.5, width = 6, dpi = 300)
+  ggsave("Charts/tct.jpg", height = 4, width = 6, dpi = 300)
 
     
